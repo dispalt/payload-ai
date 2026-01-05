@@ -1,4 +1,5 @@
-import type { CollectionSlug, PayloadRequest } from 'payload'
+import type { SerializedEditorState } from 'lexical'
+import type { BasePayload, CollectionSlug, PayloadRequest } from 'payload'
 
 import * as process from 'node:process'
 
@@ -17,8 +18,7 @@ import {
   PLUGIN_INSTRUCTIONS_TABLE,
   PLUGIN_NAME,
 } from '../defaults.js'
-import { asyncHandlebars } from '../libraries/handlebars/asyncHandlebars.js'
-import { registerEditorHelper } from '../libraries/handlebars/helpers.js'
+import { convertEditorContentToHTML, registerEditorHelper } from '../libraries/handlebars/helpers.js'
 import { handlebarsHelpersMap } from '../libraries/handlebars/helpersMap.js'
 import { replacePlaceholders } from '../libraries/handlebars/replacePlaceholders.js'
 import { extractImageData } from '../utilities/extractImageData.js'
@@ -62,11 +62,11 @@ const extendContextWithPromptFields = (
       const field = fieldsMap.get(prop)
       if (field?.getter) {
         const value = field.getter(data, ctx)
-        return Promise.resolve(value).then((v) => new asyncHandlebars.SafeString(v))
+        return Promise.resolve(value)
       }
-      // {{prop}} escapes content by default. Here we make sure it won't be escaped.
+      // Mustache: Use {{{prop}}} in templates to avoid escaping HTML
       const value = typeof target === 'object' ? (target as any)[prop] : undefined
-      return typeof value === 'string' ? new asyncHandlebars.SafeString(value) : value
+      return value
     },
     // It's used by the handlebars library to determine if the property is enumerable
     getOwnPropertyDescriptor: (target, prop) => {
@@ -119,7 +119,9 @@ const assignPrompt = async (
     field,
     layout,
     locale,
+    payload,
     pluginConfig,
+    schemaPath,
     systemPrompt = '',
     template,
   }: {
@@ -129,15 +131,25 @@ const assignPrompt = async (
     field: string
     layout: string
     locale: string
+    payload: BasePayload
     pluginConfig: PluginConfig
+    schemaPath: string
     systemPrompt: string
     template: string
     type: string
   },
 ) => {
-  const extendedContext = extendContextWithPromptFields(context, { type, collection }, pluginConfig)
+  const toHTML =
+    type === 'richText' ? handlebarsHelpersMap.toHTML.name : handlebarsHelpersMap.toText.name
+
+  const toHtml = { [toHTML]: await convertEditorContentToHTML(payload, schemaPath, (context as any).content as SerializedEditorState) }
+
+  const extendedContext = extendContextWithPromptFields(
+    context,
+    { type, collection, ...toHtml },
+    pluginConfig,
+  )
   const prompt = await replacePlaceholders(template, extendedContext)
-  const toLexicalHTML = type === 'richText' ? handlebarsHelpersMap.toHTML.name : ''
 
   const assignedPrompts = {
     layout: type === 'richText' ? layout : undefined,
@@ -180,10 +192,15 @@ const assignPrompt = async (
       })
     : ''
 
+  // For Mustache: pre-process rich text fields to HTML instead of using helpers
+  // Note: Rich text conversion happens in the context getter if needed
+  // Mustache doesn't support helpers, so we rely on pre-processed data
+
   return {
     layout: updatedLayout,
-    // TODO: revisit this toLexicalHTML
-    prompt: await replacePlaceholders(`{{${toLexicalHTML} ${field}}}`, extendedContext),
+    // Mustache uses simple variable interpolation: {{field}}
+    // Use {{{field}}} in templates to avoid HTML escaping
+    prompt: await replacePlaceholders(`{{${field}}}`, extendedContext),
     system,
   }
 }
@@ -284,7 +301,9 @@ export const endpoints: (pluginConfig: PluginConfig) => Endpoints = (pluginConfi
             field: fieldName || '',
             layout: instructions.layout,
             locale: localeInfo,
+            payload: req.payload,
             pluginConfig,
+            schemaPath,
             systemPrompt: instructions.system,
             template: String(promptTemplate),
           })

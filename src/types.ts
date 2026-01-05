@@ -235,6 +235,7 @@ export type SerializedPromptField = {
 
 export type PromptFieldGetterContext = {
   collection: CollectionSlug
+  toHTML?: string
   type: string
 }
 

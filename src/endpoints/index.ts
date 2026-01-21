@@ -142,7 +142,7 @@ const assignPrompt = async (
   const toHTML =
     type === 'richText' ? handlebarsHelpersMap.toHTML.name : handlebarsHelpersMap.toText.name
 
-  const toHtml = { [toHTML]: await convertEditorContentToHTML(payload, schemaPath, (context as any).content as SerializedEditorState) }
+  const toHtml = { [toHTML]: await convertEditorContentToHTML(payload, schemaPath, (context as any).content) }
 
   const extendedContext = extendContextWithPromptFields(
     context,
@@ -186,10 +186,10 @@ const assignPrompt = async (
 
   const system = getSystemPrompt
     ? getSystemPrompt({
-        ...(actionParams || {}),
-        prompt,
-        systemPrompt,
-      })
+      ...(actionParams || {}),
+      prompt,
+      systemPrompt,
+    })
     : ''
 
   // For Mustache: pre-process rich text fields to HTML instead of using helpers
@@ -214,7 +214,7 @@ export const endpoints: (pluginConfig: PluginConfig) => Endpoints = (pluginConfi
           // Check authentication and authorization first
           await checkAccess(req, pluginConfig)
 
-          const data = await req.json?.()
+          const data = (await req.json?.()) as Record<string, any>
 
           const { allowedEditorNodes = [], locale = 'en', options } = data
           const { action, actionParams, instructionId } = options
@@ -291,12 +291,12 @@ export const endpoints: (pluginConfig: PluginConfig) => Endpoints = (pluginConfi
             req.payload.logger.error('— AI Plugin: Error fetching settings name!')
           }
 
-          const modelOptions = settingsName ? instructions[settingsName] || {} : {}
+          const modelOptions = settingsName ? (instructions as any)[settingsName] || {} : {}
 
           const prompts = await assignPrompt(action, {
-            type: String(instructions['field-type']),
+            type: String(instructions['field-type'] as any),
             actionParams,
-            collection: collectionName,
+            collection: collectionName as any,
             context: contextData,
             field: fieldName || '',
             layout: instructions.layout,
@@ -359,7 +359,7 @@ export const endpoints: (pluginConfig: PluginConfig) => Endpoints = (pluginConfi
             headers: { 'Content-Type': 'application/json' },
             status:
               message.includes('Authentication required') ||
-              message.includes('Insufficient permissions')
+                message.includes('Insufficient permissions')
                 ? 401
                 : 500,
           })
@@ -374,7 +374,7 @@ export const endpoints: (pluginConfig: PluginConfig) => Endpoints = (pluginConfi
           // Check authentication and authorization first
           await checkAccess(req, pluginConfig)
 
-          const data = await req.json?.()
+          const data = (await req.json?.()) as any
 
           const { collectionSlug, documentId, options } = data
           const { instructionId } = options
@@ -542,7 +542,7 @@ export const endpoints: (pluginConfig: PluginConfig) => Endpoints = (pluginConfi
             headers: { 'Content-Type': 'application/json' },
             status:
               message.includes('Authentication required') ||
-              message.includes('Insufficient permissions')
+                message.includes('Insufficient permissions')
                 ? 401
                 : 500,
           })

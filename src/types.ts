@@ -67,7 +67,7 @@ export interface PluginConfig {
    */
   access?: PluginConfigAccess
   collections: {
-    [key: CollectionSlug]: boolean
+    [key: string]: boolean
   }
   debugging?: boolean
   disableSponsorMessage?: boolean
@@ -166,13 +166,13 @@ export type SeedPromptData = Omit<
 
 export type SeedPromptResult =
   | {
-      data?: SeedPromptData
-    }
+    data?: SeedPromptData
+  }
   | {
-      data?: SeedPromptData
-      prompt: string
-      system: string
-    }
+    data?: SeedPromptData
+    prompt: string
+    system: string
+  }
   | false
   | undefined
   | void

@@ -6,7 +6,7 @@ export const getFieldInfo = (collections: BasePayload['collections'], schemaPath
   let fieldInfo = null
   //TODO: Only run below for enabled collections
   for (const collectionsKey in collections) {
-    const collection = collections[collectionsKey]
+    const collection = (collections as any)[collectionsKey]
     fieldInfo = getFieldBySchemaPath(collection.config, schemaPath)
     if (fieldInfo) {
       return fieldInfo

@@ -11,14 +11,14 @@ export const fetchFields: (config: PluginConfig) => Endpoint = (config) => {
       // Check if localization is enabled
       const { locales = [] } = req.payload.config.localization || {}
       const isLocalized = locales.length > 0
-      
+
       // Get locale from request if available (from query params or headers)
       const locale = req.query?.locale as string | undefined
-      
+
       // Fetch instructions - if localized, fetch for the requested locale or default
       const { docs = [] } = await req.payload.find({
         collection: PLUGIN_INSTRUCTIONS_TABLE,
-        locale: isLocalized && locale ? locale : undefined,
+        locale: isLocalized && locale ? (locale as any) : undefined,
         pagination: false,
       })
 

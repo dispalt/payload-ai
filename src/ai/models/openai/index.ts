@@ -3,8 +3,8 @@ import type { File } from 'payload'
 
 import type { GenerationConfig } from '../../../types.js'
 
-import { defaultSystemPrompt } from '../../prompts.js'
 import { generateFileNameByPrompt } from '../../utils/generateFileNameByPrompt.js'
+import { defaultSystemPrompt } from '../../prompts.js'
 import { generateObject } from '../generateObject.js'
 import { generateImage } from './generateImage.js'
 import { generateVoice } from './generateVoice.js'

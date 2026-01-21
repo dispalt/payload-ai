@@ -102,7 +102,7 @@ export const init = async (
         'model-id': modelForId?.id,
         prompt: generatedPrompt,
         ...seed.data, // allow to override data, but not the one below
-        'field-type': fieldType,
+        'field-type': fieldType as any,
         'relation-to': relationTo,
         'schema-path': path,
       }
@@ -119,7 +119,7 @@ export const init = async (
       try {
         instructions = (await payload.create({
           collection: PLUGIN_INSTRUCTIONS_TABLE,
-          data,
+          data: data as any,
         })) as InstructionDoc
       } catch (err: unknown) {
         // Handle unique constraint violation - entry might already exist for another locale
@@ -177,10 +177,10 @@ export const init = async (
           id: instructions.id,
           collection: PLUGIN_INSTRUCTIONS_TABLE,
           data: {
-            'field-type': fieldType,
+            'field-type': fieldType as any,
           },
         })
-        instructions['field-type'] = fieldType
+        instructions['field-type'] = fieldType as any
       }
 
       fieldInstructionsMap[path] = {

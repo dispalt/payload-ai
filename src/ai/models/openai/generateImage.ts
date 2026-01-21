@@ -26,7 +26,7 @@ export const generateImage = async (
   let response: ImagesResponse
   const safeVersion = version ?? undefined
   if (images?.length) {
-    response = await editImagesWithOpenAI(images, prompt, safeVersion)
+    response = (await editImagesWithOpenAI(images, prompt, safeVersion)) as any
   } else {
     response = await openaiAPI.images.generate({
       model: safeVersion,
